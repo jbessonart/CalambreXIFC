@@ -1,6 +1,0 @@
-INDEX VERSION 1.126+/Users/macbackup/Desktop/JBessonart/Android/Workspace/.metadata/.plugins/org.eclipse.jdt.core
-1327828581.index
-742150662.index
-1270315800.index
-3051704409.index
-1014309676.index
