@@ -27,14 +27,14 @@
 package com.salesforce.samples.templateapp;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.json.JSONArray;
 
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.salesforce.androidsdk.app.SalesforceSDKManager;
@@ -43,6 +43,8 @@ import com.salesforce.androidsdk.rest.RestClient.AsyncRequestCallback;
 import com.salesforce.androidsdk.rest.RestRequest;
 import com.salesforce.androidsdk.rest.RestResponse;
 import com.salesforce.androidsdk.ui.sfnative.SalesforceActivity;
+import com.salesforce.androidsdk.util.EventsObservable;
+import com.salesforce.androidsdk.util.EventsObservable.EventType;
 
 /**
  * Main activity
@@ -50,12 +52,13 @@ import com.salesforce.androidsdk.ui.sfnative.SalesforceActivity;
 public class MainActivity extends SalesforceActivity {
 
     private RestClient client;
-    private ArrayAdapter<String> listAdapter;
+	private String partidoJugadoID;
+	private String partidoJugadoMessage;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		
 		// Setup view
 		setContentView(R.layout.main);
 	}
@@ -65,9 +68,8 @@ public class MainActivity extends SalesforceActivity {
 		// Hide everything until we are logged in
 		findViewById(R.id.root).setVisibility(View.INVISIBLE);
 
-		// Create list adapter
-		listAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, new ArrayList<String>());
-		((ListView) findViewById(R.id.contacts_list)).setAdapter(listAdapter);				
+		TextView message = (TextView) findViewById(R.id.PartidoDetails);
+		message.setText(partidoJugadoMessage);				
 		
 		super.onResume();
 	}		
@@ -88,15 +90,6 @@ public class MainActivity extends SalesforceActivity {
 	 */
 	public void onLogoutClick(View v) {
 		SalesforceSDKManager.getInstance().logout(this);
-	}
-	
-	/**
-	 * Called when "Clear" button is clicked. 
-	 * 
-	 * @param v
-	 */
-	public void onClearClick(View v) {
-		listAdapter.clear();
 	}	
 
 	/**
@@ -105,18 +98,8 @@ public class MainActivity extends SalesforceActivity {
 	 * @param v
 	 * @throws UnsupportedEncodingException 
 	 */
-	public void onFetchContactsClick(View v) throws UnsupportedEncodingException {
-        sendRequest("SELECT Name FROM Contact");
-	}
-
-	/**
-	 * Called when "Fetch Contacts" button is clicked
-	 * 
-	 * @param v
-	 * @throws UnsupportedEncodingException 
-	 */
-	public void onFetchPartidosJugadosClick(View v) throws UnsupportedEncodingException {
-        String sqlPartidosJugados = "SELECT id, JugadorID__r.Name, Estado__c, PartidoID__r.Name, PartidoID__r.Fecha__c FROM PartidoJugado__c WHERE PartidoID__r.Fecha__c >= TODAY and JugadorID__c = '" + Constants.jugadorID + "'";
+	public void onPartidosJugadosClick(View v) throws UnsupportedEncodingException {
+        String sqlPartidosJugados = "SELECT Id, JugadorID__r.Name, Estado__c, PartidoID__r.Name, PartidoID__r.Fecha__c FROM PartidoJugado__c WHERE PartidoID__r.Fecha__c >= TODAY and JugadorID__c = '" + Constants.jugadorID + "' order by PartidoID__r.Fecha__c desc limit 1";
         RestRequest restRequest = RestRequest.getRequestForQuery(getString(R.string.api_version), sqlPartidosJugados);
         
         System.out.println(sqlPartidosJugados);
@@ -125,14 +108,11 @@ public class MainActivity extends SalesforceActivity {
 			@Override
 			public void onSuccess(RestRequest request, RestResponse result) {
 				try {
-					listAdapter.clear();
 					JSONArray records = result.asJSONObject().getJSONArray("records");
 					if (records.length() > 0) {
-						for (int i = 0; i < records.length(); i++) {
-							System.out.println(records.getJSONObject(i));
-							listAdapter.add("Tu estado para el Partido Contra \"" + records.getJSONObject(i).getString("PartidoID__r") + "\" es " + records.getJSONObject(i).getString("Estado__c"));
-						}	
-						
+						Integer i = 0;
+						partidoJugadoID = records.getJSONObject(i).getString("Id");
+						partidoJugadoMessage = "Tu estado para el Partido Contra \"" + records.getJSONObject(i).getJSONArray("PartidoID__r").getJSONObject(i).getString("Name") + "\" es " + records.getJSONObject(i).getString("Estado__c");	
 					}
 				} catch (Exception e) {
 					onError(e);
@@ -148,39 +128,56 @@ public class MainActivity extends SalesforceActivity {
 		});
 	}
 	
-	/**
-	 * Called when "Fetch Accounts" button is clicked
-	 * 
-	 * @param v
-	 * @throws UnsupportedEncodingException 
-	 */
-	public void onFetchAccountsClick(View v) throws UnsupportedEncodingException {
-		sendRequest("SELECT Name FROM Account");
-	}	
+	public void onUpdateClick(View v, String estado) {
+		Map<String, Object> fields = new HashMap<String, Object>();
+		fields.put("Estado__c", estado);
+		
+		RestRequest request = null;
+		try {
+			request = RestRequest.getRequestForUpdate(getString(R.string.api_version), "PartidoJugado__c", partidoJugadoID, fields);
+		} catch (Exception e) {
+			System.out.println(e);
+			return;
+		}
+		sendRequest(request);
+	}
 	
-	private void sendRequest(String soql) throws UnsupportedEncodingException {
-		RestRequest restRequest = RestRequest.getRequestForQuery(getString(R.string.api_version), soql);
-
+	private void sendRequest(RestRequest restRequest) {
 		client.sendAsync(restRequest, new AsyncRequestCallback() {
+			
 			@Override
 			public void onSuccess(RestRequest request, RestResponse result) {
 				try {
-					listAdapter.clear();
-					JSONArray records = result.asJSONObject().getJSONArray("records");
-					for (int i = 0; i < records.length(); i++) {
-						listAdapter.add(records.getJSONObject(i).getString("Name"));
-					}					
+					System.out.println(result);
 				} catch (Exception e) {
 					onError(e);
 				}
+				
+				EventsObservable.get().notifyEvent(EventType.RenditionComplete);
 			}
 			
 			@Override
 			public void onError(Exception exception) {
-                Toast.makeText(MainActivity.this,
-                               MainActivity.this.getString(SalesforceSDKManager.getInstance().getSalesforceR().stringGenericError(), exception.toString()),
-                               Toast.LENGTH_LONG).show();
+				onError(exception);
+				EventsObservable.get().notifyEvent(EventType.RenditionComplete);	
 			}
 		});
 	}
+	
+	public void onParticipacionEnDudaClick (View v) {
+		onUpdateClick(v, "En duda");
+	}
+
+	public void onParticipacionSiClick (View v) {
+		onUpdateClick(v, "Si");
+	}
+	
+	public void onParticipacionNoClick (View v) {
+		onUpdateClick(v, "No");
+	}
+	
+	public void onParticipacionIgnorarClick (View v) {
+		// do nothing
+	}
+	
 }
