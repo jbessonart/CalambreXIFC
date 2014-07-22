@@ -38,28 +38,28 @@
 	        android:id="@+id/participacionSi"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:onClick="onParticipationSiClick"
+	        android:onClick="onParticipacionSiClick"
 	        android:text="Si" />
 
 	    <Button
 	        android:id="@+id/participacionEnDuda"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:onClick="onParticipationEnDudaClick"
+	        android:onClick="onParticipacionEnDudaClick"
 	        android:text="En duda" />
 
 	    <Button
 	        android:id="@+id/participacionNo"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:onClick="onParticipationNoClick"
+	        android:onClick="onParticipacionNoClick"
 	        android:text="No" />
 
 	    <Button
 	        android:id="@+id/participacionIgnorar"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:onClick="onParticipationIgnorarClick"
+	        android:onClick="onParticipacionIgnorarClick"
 	        android:text="Ignorar" />
 	</LinearLayout>
 

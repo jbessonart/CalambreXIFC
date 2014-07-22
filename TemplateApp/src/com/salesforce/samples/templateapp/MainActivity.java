@@ -112,7 +112,12 @@ public class MainActivity extends SalesforceActivity {
 					if (records.length() > 0) {
 						Integer i = 0;
 						partidoJugadoID = records.getJSONObject(i).getString("Id");
-						partidoJugadoMessage = "Tu estado para el Partido Contra \"" + records.getJSONObject(i).getJSONArray("PartidoID__r").getJSONObject(i).getString("Name") + "\" es " + records.getJSONObject(i).getString("Estado__c");	
+						String nombreRival = records.getJSONObject(i).getJSONObject("PartidoID__r").getString("Name");
+						partidoJugadoMessage = "Tu estado para el Partido Contra \"" + nombreRival + "\" es " + records.getJSONObject(i).getString("Estado__c");	
+						System.out.println(partidoJugadoMessage);
+						
+						TextView message = (TextView) findViewById(R.id.PartidoDetails);
+						message.setText(partidoJugadoMessage);		
 					}
 				} catch (Exception e) {
 					onError(e);
